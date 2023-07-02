@@ -1,0 +1,36 @@
+///final working logic for updating annuity owner in renewal tab
+
+trigger insertUpdateAnnuityOwner on SymphonyIPM__Patent__c (after update) {
+    Set<Id> patentIds = new Set<Id>();
+    
+    // Collect the IDs of the updated patents
+    for (SymphonyIPM__Patent__c patent : Trigger.new) {
+        SymphonyIPM__Patent__c oldPatent = Trigger.oldMap.get(patent.Id);
+        
+        // Check if the Annuity_Owner__c field has changed
+        if (patent.Annuity_Owner__c != oldPatent.Annuity_Owner__c) {
+            patentIds.add(patent.Id);
+        }
+    }
+    
+    if (!patentIds.isEmpty()) {
+        List<SIPMRenewalBase__Annuity_Payment_v2__c> annuityPayments = [SELECT Id, Annuity_Owner__c, SIPMRenewalBase__Patent__c
+                                                                        FROM SIPMRenewalBase__Annuity_Payment_v2__c 
+                                                                        WHERE SIPMRenewalBase__Patent__c IN :patentIds];
+        List<SymphonyIPM__Patent__c> getOwners = [SELECT Annuity_Owner__c FROM SymphonyIPM__Patent__c WHERE Id IN :patentIds];
+        Map<Id, String> ownerIdMap = new Map<Id, String>();
+        
+        // Create a map of Patent IDs and their corresponding Annuity Owners
+        for (SymphonyIPM__Patent__c owner : getOwners) {
+            ownerIdMap.put(owner.Id, owner.Annuity_Owner__c);
+        }
+        
+        // Update the Annuity_Owner_2__c field on the related Annuity Payments
+        for (SIPMRenewalBase__Annuity_Payment_v2__c payment : annuityPayments) {
+            payment.Annuity_Owner_2__c = ownerIdMap.get(payment.SIPMRenewalBase__Patent__c);
+        }
+        
+        // Perform the update
+        update annuityPayments;
+    }
+}
