@@ -1,0 +1,37 @@
+///final working logic for updating annuity owner in renewal tab
+
+trigger updateAnnuityOwner on SymphonyIPM__Patent__c (after update) {
+    Set<Id> patentIds = new Set<Id>();
+    for (SymphonyIPM__Patent__c patent : Trigger.new) {
+        SymphonyIPM__Patent__c oldPatent = Trigger.oldMap.get(patent.Id);
+        
+        if (patent.Annuity_Owner__c != oldPatent.Annuity_Owner__c) {
+            patentIds.add(patent.Id);
+        }
+    }
+    
+    if (!patentIds.isEmpty()) {
+        try{
+            
+            List<SymphonyIPM__Patent__c> getOwners = [SELECT Annuity_Owner__c FROM SymphonyIPM__Patent__c WHERE Id IN :patentIds];        
+            
+            Map<Id, String> ownerIdMap = new Map<Id, String>();        
+            
+            for (SymphonyIPM__Patent__c owner : getOwners) 
+            {            
+                owner.Annuity_Owner2__c = owner.Annuity_Owner__c;
+            }
+            update getOwners;      
+        }
+    
+    
+    catch(DmlException dmlExp)
+    {
+        system.debug(dmlExp);
+    }
+    catch(sObjectException sobjExp)
+    {
+        system.debug(sobjExp);
+    }
+    }
+}
