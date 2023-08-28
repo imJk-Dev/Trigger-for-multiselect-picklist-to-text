@@ -1,0 +1,29 @@
+@isTest
+public class insertUpdateAnnuityOwnerTest {
+    @isTest
+    static void testAnnuityOwnerUpdate() {
+        // Create test data
+        SymphonyIPM__Patent__c patent = new SymphonyIPM__Patent__c(Annuity_Owner__c = 'Advanced Micro Devices, Inc.',SymphonyIPM__Title_of_Invention__c = 'TestInvention');
+        insert patent;
+        
+        SIPMRenewalBase__Annuity_Payment_v2__c annuityPayment = new SIPMRenewalBase__Annuity_Payment_v2__c(
+            SIPMRenewalBase__Patent__c = patent.Id,
+            SIPMRenewalBase__Instruction__c = 'On Hold'
+        );
+        insert annuityPayment;
+        
+        // Update the Annuity Owner field
+        patent.Annuity_Owner__c = 'ATI Technologies ULC';
+        update patent;
+        
+        // Perform the test
+        List<SIPMRenewalBase__Annuity_Payment_v2__c> updatedPayments = [
+            SELECT Annuity_Owner__c
+            FROM SIPMRenewalBase__Annuity_Payment_v2__c
+            WHERE Id = :annuityPayment.Id
+        ];
+        
+        // Assert the Annuity Owner field is updated
+        System.assertEquals('ATI Technologies ULC', updatedPayments[0].Annuity_Owner__c);
+    }
+}
